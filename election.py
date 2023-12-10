@@ -1,6 +1,6 @@
 import numpy as np
 from scipy import stats
-from multiset import *
+from collections import Counter
 from voters import *
 from parties import Party
 
@@ -14,7 +14,7 @@ class Election(object):
 
         self.voters = self.num_voters * [None]
         self.parties = self.num_parties * [None]
-        self.parlement = Multiset({None : self.num_seats})
+        self.parlement = Counter({None : self.num_seats})
 
     def __repr__(self):
         return f'Election({self.num_voters}, {self.num_parties}, {self.num_seats}, {self.voter_types})'
@@ -32,7 +32,7 @@ class Election(object):
             preference = sorted(self.parties, key = lambda party: np.linalg.norm(party.position - favorite.position))
             voter.preference = preference
           
-    def count_votes(self):
+    def aggregate_votes(self):
         raise NotImplementedError
     
     def elect_parlement(self):
@@ -49,8 +49,7 @@ class DHondt(Election):
     def __init__(self, num_voters, num_parties, num_seats):
         super().__init__(num_voters, num_parties, num_seats)
 
-    def count_votes(self):
-        pass
+    
 
     def __repr__(self):
         return 'DHondt ' + super().__repr__()
