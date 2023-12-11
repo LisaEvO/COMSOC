@@ -6,7 +6,7 @@ class Voter(object):
     def __init__(self, id:int, preference:list, *args, **kwargs):
         self.id = id
         self.preference = preference
-        self.ballot = preference
+        self.ballot = self.preference
     
     def __repr__(self):
         return f'Voter {self.id}: pref = {self.preference[0]}, vote = {self.ballot[0]}'
@@ -14,7 +14,7 @@ class Voter(object):
     def __str__(self):
         return f'Voter {self.id} with preference: {self.preference} and current vote: {self.ballot[0]}'
     
-    def update_ballot(self, poll):
+    def update_ballot(self, poll_result:Counter):
         raise NotImplementedError
     
     def vote(self):
@@ -32,7 +32,7 @@ class Saint(Voter):
     def __str__(self):
         return 'Saint ' + super().__str__()
     
-    def update_ballot(self, poll:Counter):
+    def update_ballot(self, poll_result):
         self.ballot = self.preference
 
 
@@ -47,12 +47,14 @@ class Spineless(Voter):
     def __str__(self):
         return 'Spineless ' + super().__str__()
 
-    def update_ballot(self, poll:Counter):
-        frontrunner = [p[0] for p in poll.most_common(1)]
+    def update_ballot(self, poll_result):
+        frontrunner = [p[0] for p in poll_result.most_common(1)][0]
         preference = self.preference.copy()
-        self.ballot = preference.insert(0, preference.pop(preference.index(frontrunner)))
+        preference.insert(0, preference.pop(preference.index(frontrunner)))
 
-    
+        self.ballot = preference
+        
+   
 class Opportunist(Voter):
 
     def __init__(self, id, preference, k:int, *args, **kwargs):
@@ -65,12 +67,13 @@ class Opportunist(Voter):
     def __str__(self):
         return f'Opportunist({self.k}) ' + super().__str__()
     
-    def update_ballot(self, poll):
+    def update_ballot(self, poll_result):
         topk = self.preference[:self.k]
-        front_from_topk = max([p for p in poll.items() if p[0] in topk], key=lambda p: p[1])
+        front_from_topk = max([p for p in poll_result.items() if p[0] in topk], key=lambda p: p[1])[0]
         preference = self.preference.copy()
-        self.ballot = preference.insert(0, preference.pop(preference.index(front_from_topk)))
+        preference.insert(0, preference.pop(preference.index(front_from_topk)))
 
+        self.ballot = preference
 
 class Follower(Voter):
 
@@ -84,11 +87,13 @@ class Follower(Voter):
     def __str__(self):
         return f'Follower({self.g}) ' + super().__str__()
 
-    def update_ballot(self, poll):
-        frontg = [p[0] for p in poll.most_common(self.g)]
+    def update_ballot(self, poll_result):
+        frontg = [p[0] for p in poll_result.most_common(self.g)]
         top_from_frontg = self.preference[min(self.preference.index(p) for p in frontg)]
         preference = self.preference.copy()
-        self.ballot = preference.insert(0, preference.pop(preference.index(top_from_frontg)))
+        preference.insert(0, preference.pop(preference.index(top_from_frontg)))
+
+        self.ballot = preference
 
 
 class NonConformist(Voter):
@@ -103,11 +108,13 @@ class NonConformist(Voter):
     def __str__(self):
         return f'NonConformist({self.k}) ' + super().__str__()
     
-    def update_ballot(self, poll):
+    def update_ballot(self, poll_result):
         topk = self.preference[:self.k]
-        back_from_topk = min([p for p in poll.items() if p[0] in topk], key=lambda p: p[1])
+        back_from_topk = min([p for p in poll_result.items() if p[0] in topk], key=lambda p: p[1])[0]
         preference = self.preference.copy()
-        self.ballot = preference.insert(0, preference.pop(preference.index(back_from_topk)))
+        preference.insert(0, preference.pop(preference.index(back_from_topk)))
+
+        self.ballot = preference
 
 class Strategist(Voter):
 
@@ -122,17 +129,19 @@ class Strategist(Voter):
     def __str__(self):
         return f'Strategist({self.k}, {self.g}) ' + super().__str__()
     
-    def update_ballot(self, poll):
+    def update_ballot(self, poll_result):
         bottomk = self.preference[-self.k:]
-        frontg = [p[0] for p in poll.most_common(self.g)]
+        frontg = [p[0] for p in poll_result.most_common(self.g)]
 
         inbotandfront = [p for p in bottomk if p in frontg]
 
         if inbotandfront != []:
             topk = self.preference[:self.k]
-            front_from_topk = max([p for p in poll.items() if p[0] in topk])[0]
+            front_from_topk = max([p for p in poll_result.items() if p[0] in topk], key=lambda p: p[1])[0]
             preference = self.preference.copy()
-            self.ballot = preference.insert(0, preference.pop(preference.index(front_from_topk)))
+            preference.insert(0, preference.pop(preference.index(front_from_topk)))
+
+            self.ballot = preference
             
         else:
             self.ballot = self.preference

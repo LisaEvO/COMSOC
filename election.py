@@ -6,7 +6,8 @@ from parties import Party
 
 class Election(object):
 
-    def __init__(self, voter_composition, num_parties:int, num_seats:int, num_polls:int, pdistr=stats.uniform, vdistr=stats.uniform, ddim=1):
+    def __init__(self, voter_composition, num_parties:int, num_seats:int, num_polls:int, 
+                 pdistr='uniform', vdistr='truncnorm', ddim=1):
         
         self.voter_composition = voter_composition
         self.num_voters = sum([len(val) for val in self.voter_composition.values()])
@@ -30,54 +31,82 @@ class Election(object):
         return f'Election with {self.num_voters} voters, {self.num_parties} parties for {self.num_seats} seats'
     
     def sample_parties(self):
-        party_positions = sorted(self.pdistr.rvs(-1, 2, size=(self.num_parties, self.ddim)), key=lambda lr: lr[0])
+        if self.pdistr == 'uniform':
+            party_positions = sorted(stats.uniform.rvs(-1, 2, size=(self.num_parties, self.ddim)), key=lambda lr: lr[0])
+        
+        elif self.pidstr == 'truncnorm':
+            party_positions = sorted(stats.truncnorm.rvs(-1, 1, size=(self.num_parties, self.ddim)), key=lambda lr: lr[0])
+        
         self.parties = [Party(name=chr(i + 97), position=pos) for i, pos in enumerate(party_positions)]
     
-    def create_electorate(self):
-        id=0
+    def sample_voters(self):
+        if self.vdistr == 'uniform':
+            voter_positions = stats.uniform.rvs(-1,2, size=(self.num_voters, self.ddim))
+
+        elif self.vdistr == 'truncnorm':
+            voter_positions = stats.truncnorm.rvs(-1,1, size=(self.num_voters, self.ddim))
+
+        preferences = []
+        for i, voter in enumerate(self.voters):
+            preferences.append( sorted(self.parties, key = lambda party: np.linalg.norm(voter_positions[i] - party.position)))
+        
+        id = 0
         for voter_type, val in self.voter_composition.items():
             for args in val:
-                self.voters[id] = voter_type(id, [None], *args)
-                id+=1
+                self.voters[id] = voter_type(id, preferences[id], *args)
+                id += 1
 
-    def distribute_voters(self):
-        voter_positions = self.vdistr.rvs(-1,2, size=(self.num_voters, self.ddim))
-        for i, voter in enumerate(self.voters):
-            preference = sorted(self.parties, key = lambda party: np.linalg.norm(voter_positions[i] - party.position))
-            voter.preference = preference
-          
+   
     def aggregate_votes(self, ballots):
         raise NotImplementedError
     
     def elect_parlement(self, votes):
         raise NotImplementedError
     
+    def poll(self, parlement, poll_type='parlement', *args, **kwargs):
+        if poll_type == 'parlement':
+            return parlement
+        
+        elif poll_type == 'frontrunner':
+            return Counter({p[0] : p[1] for p in parlement.most_common(1)})
+        
+        elif poll_type == 'frontg':
+            return Counter({p[0] : p[1] for p in self.parlement.most_common(args[0])})
+        
+        else:
+            raise ValueError('invalid poll_type')
+        
     def update_voter_beliefs(self, poll_result):
         for voter in self.voters:
             voter.update_ballot(poll_result)
 
     def run(self):
-        self.sample_parties()
-        self.create_electorate()
-        self.distribute_voters()
         
-        for poll in range(self.num_polls):
-            ballots = [voter.vote() for voter in self.voters]
-            votes = self.aggregate_votes(ballots)
-            poll_result = self.elect_parlement(votes)
+        self.sample_parties()
+        self.sample_voters()
+        
+        poll_results = []
 
+        for poll in range(self.num_polls):
+            current_ballots = [voter.vote() for voter in self.voters]
+            current_votes = self.aggregate_votes(current_ballots)
+            poll_result = self.poll(self.elect_parlement(current_votes))
+            poll_results.append(poll_result)
             self.update_voter_beliefs(poll_result)
         
-        ballots = [voter.vote() for voter in self.voters]
-        votes = self.aggregate_votes(ballots)
-        election_result = self.elect_parlement(votes)
-    
-        return election_result
+        final_ballots = [voter.vote() for voter in self.voters]
+        final_votes = self.aggregate_votes(final_ballots)
+        self.parlement = self.elect_parlement(final_votes)
+        
+        election_results = poll_results + [self.parlement]
+        
+        return election_results
+         
     
 class DHondt(Election):
     
-    def __init__(self, num_voters, num_parties, num_seats):
-        super().__init__(num_voters, num_parties, num_seats)
+    def __init__(self, voter_composition, num_parties:int, num_seats:int, num_polls:int, *args, **kwargs):
+        super().__init__(voter_composition, num_parties, num_seats, num_polls, *args, **kwargs)
 
     def __repr__(self):
         return 'DHondt ' + super().__repr__()
@@ -90,6 +119,13 @@ class DHondt(Election):
         return votes
     
     def elect_parlement(self, votes):
-        #TODO: Meggie
-        raise NotImplementedError
+        seats_so_far = Counter({party : 0 for party in self.parties})
+        
+        while sum(s for s in seats_so_far.values()) < self.num_seats:
+            quot = {party: votes[party] / (seats_so_far[party] + 1) for party in self.parties}
+            seats_so_far[max(quot, key=quot.get)] +=1
+            
+        parlement = seats_so_far
+        return parlement
+        
         
