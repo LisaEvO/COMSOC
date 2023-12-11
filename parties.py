@@ -3,7 +3,7 @@ import numpy as np
 
 class Party(object):
     
-    def __init__(self, name, position):
+    def __init__(self, name:str, position:np.ndarray):
         self.name = name
         self.position = position
     
