@@ -21,7 +21,7 @@ class Election(object):
 
         self.voters = self.num_voters * [None]
         self.parties = self.num_parties * [None]
-        self.parlement = Counter({None : self.num_seats})
+        self.parliament = Counter({None : self.num_seats})
 
 
     def __repr__(self):
@@ -34,9 +34,12 @@ class Election(object):
         if self.pdistr == 'uniform':
             party_positions = sorted(stats.uniform.rvs(-1, 2, size=(self.num_parties, self.ddim)), key=lambda lr: lr[0])
         
-        elif self.pidstr == 'truncnorm':
+        elif self.pdistr == 'truncnorm':
             party_positions = sorted(stats.truncnorm.rvs(-1, 1, size=(self.num_parties, self.ddim)), key=lambda lr: lr[0])
         
+        elif self.pdistr == 'bimodal':
+            pass
+
         self.parties = [Party(name=chr(i + 97), position=pos) for i, pos in enumerate(party_positions)]
     
     def sample_voters(self):
@@ -48,7 +51,7 @@ class Election(object):
 
         preferences = []
         for i, voter in enumerate(self.voters):
-            preferences.append( sorted(self.parties, key = lambda party: np.linalg.norm(voter_positions[i] - party.position)))
+            preferences.append(sorted(self.parties, key = lambda party: np.linalg.norm(voter_positions[i] - party.position)))
         
         id = 0
         for voter_type, val in self.voter_composition.items():
@@ -60,23 +63,23 @@ class Election(object):
     def aggregate_votes(self, ballots):
         raise NotImplementedError
     
-    def elect_parlement(self, votes):
+    def elect_parliament(self, votes):
         raise NotImplementedError
     
-    def poll(self, parlement, poll_type='parlement', *args, **kwargs):
-        if poll_type == 'parlement':
-            return parlement
+    def poll(self, parliament, poll_type='parliament', *args, **kwargs):
+        if poll_type == 'parliament':
+            return parliament
         
         elif poll_type == 'frontrunner':
-            return Counter({p[0] : p[1] for p in parlement.most_common(1)})
+            return Counter({p[0] : p[1] for p in parliament.most_common(1)})
         
         elif poll_type == 'frontg':
-            return Counter({p[0] : p[1] for p in self.parlement.most_common(args[0])})
+            return Counter({p[0] : p[1] for p in self.parliament.most_common(args[0])})
         
         else:
             raise ValueError('invalid poll_type')
         
-    def update_voter_beliefs(self, poll_result):
+    def update_ballots(self, poll_result):
         for voter in self.voters:
             voter.update_ballot(poll_result)
 
@@ -90,15 +93,15 @@ class Election(object):
         for poll in range(self.num_polls):
             current_ballots = [voter.vote() for voter in self.voters]
             current_votes = self.aggregate_votes(current_ballots)
-            poll_result = self.poll(self.elect_parlement(current_votes))
+            poll_result = self.poll(self.elect_parliament(current_votes))
             poll_results.append(poll_result)
-            self.update_voter_beliefs(poll_result)
+            self.update_ballots(poll_result)
         
         final_ballots = [voter.vote() for voter in self.voters]
         final_votes = self.aggregate_votes(final_ballots)
-        self.parlement = self.elect_parlement(final_votes)
+        self.parliament = self.elect_parliament(final_votes)
         
-        election_results = poll_results + [self.parlement]
+        election_results = poll_results + [self.parliament]
         
         return election_results
          
@@ -118,14 +121,14 @@ class DHondt(Election):
         votes = Counter([ballot[0] for ballot in ballots])
         return votes
     
-    def elect_parlement(self, votes):
+    def elect_parliament(self, votes):
         seats_so_far = Counter({party : 0 for party in self.parties})
         
         while sum(s for s in seats_so_far.values()) < self.num_seats:
             quot = {party: votes[party] / (seats_so_far[party] + 1) for party in self.parties}
             seats_so_far[max(quot, key=quot.get)] +=1
             
-        parlement = seats_so_far
-        return parlement
+        parliament = seats_so_far
+        return parliament
         
         

@@ -1,4 +1,3 @@
-from multiset import *
 from collections import Counter
 
 class Voter(object):
