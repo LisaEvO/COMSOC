@@ -1,12 +1,14 @@
 from collections import Counter
+import numpy as np
 
 class Voter(object):
     
-    def __init__(self, id:int, preference:list, *args, **kwargs):
+    def __init__(self, id:int, position:np.ndarray, preference:list, *args, **kwargs):
         self.id = id
+        self.position = position
         self.preference = preference
         self.ballot = self.preference
-    
+        
     def __repr__(self):
         return f'Voter {self.id}: pref = {self.preference[0]}, vote = {self.ballot[0]}'
 
@@ -22,8 +24,8 @@ class Voter(object):
 
 class Saint(Voter):
 
-    def __init__(self, id, preference, *args, **kwargs):
-        super().__init__(id, preference)
+    def __init__(self, id, position, preference, *args, **kwargs):
+        super().__init__(id, position, preference)
     
     def __repr__(self):
         return super().__repr__() + ' (Saint)'
@@ -37,8 +39,8 @@ class Saint(Voter):
 
 class Spineless(Voter):
 
-    def __init__(self, id, preference, *args, **kwargs):
-        super().__init__(id, preference)
+    def __init__(self, id, position, preference, *args, **kwargs):
+        super().__init__(id, position, preference)
     
     def __repr__(self):
         return super().__repr__() + ' (Spineless)'
@@ -56,8 +58,8 @@ class Spineless(Voter):
    
 class Opportunist(Voter):
 
-    def __init__(self, id, preference, k:int, *args, **kwargs):
-        super().__init__(id, preference)
+    def __init__(self, id, position, preference, k:int, *args, **kwargs):
+        super().__init__(id, position, preference)
         self.k = k
 
     def __repr__(self):
@@ -76,8 +78,8 @@ class Opportunist(Voter):
 
 class Follower(Voter):
 
-    def __init__(self, id, preference, g:int, *args, **kwargs):
-        super().__init__(id, preference)
+    def __init__(self, id, position, preference, g:int, *args, **kwargs):
+        super().__init__(id, position, preference)
         self.g = g
 
     def __repr__(self):
@@ -97,8 +99,8 @@ class Follower(Voter):
 
 class NonConformist(Voter):
 
-    def __init__(self, id, preference, k, *args, **kwargs):
-        super().__init__(id, preference)
+    def __init__(self, id, position, preference, k, *args, **kwargs):
+        super().__init__(id, position, preference)
         self.k = k
     
     def __repr__(self):
@@ -117,8 +119,8 @@ class NonConformist(Voter):
 
 class Strategist(Voter):
 
-    def __init__(self, id, preference, k, g, *args, **kwargs):
-        super().__init__(id, preference)
+    def __init__(self, id, position, preference, k, g, *args, **kwargs):
+        super().__init__(id, position, preference)
         self.k = k
         self.g = g
 
