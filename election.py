@@ -6,74 +6,40 @@ from parties import Party
 
 class Election(object):
 
-    def __init__(self, voter_composition, num_parties:int, num_seats:int, num_polls:int, 
-                 pdistr='uniform', vdistr='truncnorm', ddim=1):
+    def __init__(self, voters:list, parties:list, num_seats:int, num_polls:int, poll_type='parliament'):
         
-        self.voter_composition = voter_composition
-        self.num_voters = sum([len(val) for val in self.voter_composition.values()])
-        self.num_parties = num_parties
+        self.voters = voters
+        self.num_voters = len(self.voters)
+        
+        self.parties = parties
+        self.num_parties = len(self.parties)
+        
         self.num_seats = num_seats
         self.num_polls = num_polls
-        
-        self.pdistr = pdistr
-        self.vdistr = vdistr
-        self.ddim = ddim
 
-        self.voters = self.num_voters * [None]
-        self.parties = self.num_parties * [None]
+        self.poll_type = poll_type
         self.parliament = Counter({None : self.num_seats})
 
-
     def __repr__(self):
-        return f'Election({self.num_voters}, {self.num_parties}, {self.num_seats}, {self.voter_types})'
+        return f'Election({self.num_voters}, {self.num_parties}, {self.num_seats}, {self.num_polls})'
     
     def __str__(self):
         return f'Election with {self.num_voters} voters, {self.num_parties} parties for {self.num_seats} seats'
     
-    def sample_parties(self):
-        if self.pdistr == 'uniform':
-            party_positions = sorted(stats.uniform.rvs(-1, 2, size=(self.num_parties, self.ddim)), key=lambda lr: lr[0])
-        
-        elif self.pdistr == 'truncnorm':
-            party_positions = sorted(stats.truncnorm.rvs(-1, 1, size=(self.num_parties, self.ddim)), key=lambda lr: lr[0])
-        
-        elif self.pdistr == 'bimodal':
-            pass
-
-        self.parties = [Party(name=chr(i + 97), position=pos) for i, pos in enumerate(party_positions)]
-    
-    def sample_voters(self):
-        if self.vdistr == 'uniform':
-            voter_positions = stats.uniform.rvs(-1,2, size=(self.num_voters, self.ddim))
-
-        elif self.vdistr == 'truncnorm':
-            voter_positions = stats.truncnorm.rvs(-1,1, size=(self.num_voters, self.ddim))
-
-        preferences = []
-        for i, voter in enumerate(self.voters):
-            preferences.append(sorted(self.parties, key = lambda party: np.linalg.norm(voter_positions[i] - party.position)))
-        
-        id = 0
-        for voter_type, val in self.voter_composition.items():
-            for args in val:
-                self.voters[id] = voter_type(id, preferences[id], *args)
-                id += 1
-
-   
     def aggregate_votes(self, ballots):
         raise NotImplementedError
     
     def elect_parliament(self, votes):
         raise NotImplementedError
     
-    def poll(self, parliament, poll_type='parliament', *args, **kwargs):
-        if poll_type == 'parliament':
+    def poll(self, parliament,*args):
+        if self.poll_type == 'parliament':
             return parliament
         
-        elif poll_type == 'frontrunner':
+        elif self.poll_type == 'frontrunner':
             return Counter({p[0] : p[1] for p in parliament.most_common(1)})
         
-        elif poll_type == 'frontg':
+        elif self.poll_type == 'frontg':
             return Counter({p[0] : p[1] for p in self.parliament.most_common(args[0])})
         
         else:
@@ -84,9 +50,6 @@ class Election(object):
             voter.update_ballot(poll_result)
 
     def run(self):
-        
-        self.sample_parties()
-        self.sample_voters()
         
         poll_results = []
 
@@ -108,8 +71,8 @@ class Election(object):
     
 class DHondt(Election):
     
-    def __init__(self, voter_composition, num_parties:int, num_seats:int, num_polls:int, *args, **kwargs):
-        super().__init__(voter_composition, num_parties, num_seats, num_polls, *args, **kwargs)
+    def __init__(self, voters:list, parties:list, num_seats:int, num_polls:int,poll_type='parliament', *args, **kwargs):
+        super().__init__(voters, parties, num_seats, num_polls, poll_type, *args, **kwargs)
 
     def __repr__(self):
         return 'DHondt ' + super().__repr__()
