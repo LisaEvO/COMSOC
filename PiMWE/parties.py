@@ -1,5 +1,5 @@
 import numpy as np
-from voters import *
+from PiMWE.voters import *
 
 class Party(object):
     

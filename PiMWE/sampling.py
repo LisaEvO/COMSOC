@@ -1,8 +1,8 @@
 import numpy as np
 from scipy import stats
 
-from parties import *
-from voters import *
+from PiMWE.parties import *
+from PiMWE.voters import *
 
 
 def sample_parties(num_parties, distribution='uniform', dim=1, params=None, representation=False):

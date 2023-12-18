@@ -1,8 +1,5 @@
-import numpy as np
-from scipy import stats
 from collections import Counter
-from voters import *
-from parties import Party
+from PiMWE.voters import *
 
 class Election(object):
 

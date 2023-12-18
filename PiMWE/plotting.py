@@ -1,5 +1,5 @@
-from voters import *
-from parties import *
+from PiMWE.voters import *
+from PiMWE.parties import *
 import networkx as nx
 
 import matplotlib.pyplot as plt
@@ -34,14 +34,15 @@ def plot_spectrum(voters, parties, vcmap=None, pcmap=None):
     ax.set_xticklabels('')
     ax.set_yticklabels('')
     plt.scatter(voters_x, voters_y, s=0.2, color=vcolors)
-    plt.scatter(parties_x, parties_y, s=30, c=pcolors, marker='o', label=party_labels)
+    plt.scatter(parties_x, parties_y, s=50, c=pcolors, marker='o', label=party_labels)
 
     for label, x, y in zip(party_labels, parties_x, parties_y):
-        ax.annotate(label, (x, y), textcoords="offset points", xytext=(0,5), ha='center', color=pcmap[label])
+        ax.annotate(label, (x, y), textcoords="offset points", xytext=(0,5), 
+                    ha='center', color=pcmap[label], fontsize=12, fontweight='bold')
 
     plt.show()
 
-def plot_seats_multiple_runs(outcomes, pcmap=None):
+def plot_seats_over_time(outcomes, pcmap=None):
     parties = sorted(list(outcomes[0][0].keys()), key=lambda party: party.idx)
     data = []
     for outcome in outcomes:
@@ -67,7 +68,7 @@ def plot_seats_multiple_runs(outcomes, pcmap=None):
     for i, party in enumerate(parties):
         means[party.name] = np.mean([d[party.name] for d in data], axis=0)
         stds[party.name] = np.std([d[party.name] for d in data], axis=0)
-        plt.plot(poll_nrs, means[party.name], label=party.name+": "+ str(np.round(party.position,2)), color=pcolors[i])
+        plt.plot(poll_nrs, means[party.name], label=party.name, color=pcolors[i])
         plt.fill_between(poll_nrs, means[party.name]-stds[party.name], 
                          means[party.name]+stds[party.name], alpha=0.2, color = pcolors[i])
     plt.xlabel("Poll")
