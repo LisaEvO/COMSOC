@@ -49,6 +49,7 @@ class Election(object):
         for voter in self.voters:
             voter.update_ballot(poll_result)
 
+
     def run(self):
         
         poll_results = []
@@ -59,6 +60,7 @@ class Election(object):
             poll_result = self.poll(self.elect_parliament(current_votes))
             poll_results.append(poll_result)
             self.update_ballots(poll_result)
+            
         
         final_ballots = [voter.vote() for voter in self.voters]
         final_votes = self.aggregate_votes(final_ballots)

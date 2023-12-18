@@ -26,8 +26,8 @@ def plot_spectrum(voters, parties, vcmap=None, pcmap=None):
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     
-    ax.spines['bottom'].set_position(('axes',0.5))
-    ax.spines['left'].set_position(('axes', 0.5))
+    ax.spines['bottom'].set_position(('data', 0))
+    ax.spines['left'].set_position(('data', 0))
     ax.spines['top'].set_color('none')
     ax.spines['right'].set_color('none')
 
@@ -42,7 +42,7 @@ def plot_spectrum(voters, parties, vcmap=None, pcmap=None):
     plt.show()
 
 def plot_seats_multiple_runs(outcomes, pcmap=None):
-    parties = sorted(list(outcomes[0][0].keys()), key=lambda party: party.name)
+    parties = sorted(list(outcomes[0][0].keys()), key=lambda party: party.idx)
     data = []
     for outcome in outcomes:
         seat_plot = {}
@@ -76,36 +76,42 @@ def plot_seats_multiple_runs(outcomes, pcmap=None):
     plt.legend(bbox_to_anchor=(1, 1.05))
     plt.show()
 
+def plot_flow_graph(elections, pcmap=None):
+    lst_flow_dict, lst_number_fans = [],[]
+    for election in elections:
+        flow_dict = defaultdict(int)
+        number_fans = {party: 0 for party in elections[0].parties}
+        for voter in election.voters:
+            key = (voter.preference[0], voter.ballot[0])
+            flow_dict[key] += 1
+            number_fans[voter.ballot[0]] += 1
+        lst_flow_dict.append(flow_dict)
+        lst_number_fans.append(number_fans)
 
-def plot_flow_graph(election, pcmap=None):
-    flow_dict = defaultdict(int)
-    number_fans = defaultdict(int)
-    for voter in election.voters:
-        key = voter.preference[0].name + voter.ballot[0].name
-        flow_dict[key] += 1
-        number_fans[voter.ballot[0].name] += 1
+    flow_dict = {key: [i[key] for i in lst_flow_dict] for key in lst_flow_dict[0]}
+    number_fans = {key: [i[key] for i in lst_number_fans] for key in lst_number_fans[0]}
+
+    flow_dict = {key: np.mean(flow_dict[key]) for key in flow_dict}
+    number_fans = {key: np.mean(number_fans[key]) for key in number_fans}
 
     G = nx.DiGraph() 
     for party in number_fans.keys():
-        G.add_node(party)
+        G.add_node(party.name)
 
-    width  = []
     for connection in flow_dict.keys():
         if connection[0]!=connection[1]:
-            G.add_edge(connection[0],connection[1])
-            width.append(flow_dict[connection]/100)
+            G.add_edge(connection[0].name,connection[1].name, length = flow_dict[connection])
     
     if pcmap is None:
         cmap = plt.get_cmap('rainbow_r')
         norm = plt.Normalize(0, election.num_parties - 1)
         colors = cmap(norm(np.arange(election.num_parties)))
-        pcmap = {party.name: colors[i] for i, party in enumerate(election.parties)}
+        pcmap = {party: colors[i] for i, party in enumerate(election.parties)}
 
     pcolors = [pcmap[party] for party in number_fans.keys()]
-            
-
+    width = [edge[2]['length']/100 for edge in G.edges(data=True)]
     pos = nx.spring_layout(G)
     nx.draw(G, pos, with_labels=True, connectionstyle='arc3, rad = 0.1', 
             node_size=list(number_fans.values()), width=width, node_color=pcolors )
-    
+
     plt.show()

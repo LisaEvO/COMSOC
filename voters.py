@@ -8,6 +8,7 @@ class Voter(object):
         self.position = position
         self.preference = preference
         self.ballot = self.preference
+        self.satisfaction = 0.
         
     def __repr__(self):
         return f'Voter {self.id}: pref = {self.preference[0]}, vote = {self.ballot[0]}'
@@ -17,7 +18,7 @@ class Voter(object):
     
     def update_ballot(self, poll_result:Counter):
         raise NotImplementedError
-    
+
     def vote(self):
         return self.ballot
 
@@ -35,6 +36,8 @@ class Saint(Voter):
     
     def update_ballot(self, poll_result):
         self.ballot = self.preference
+
+
 
 
 class Spineless(Voter):
