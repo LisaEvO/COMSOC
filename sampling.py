@@ -5,7 +5,7 @@ from parties import *
 from voters import *
 
 
-def sample_parties(num_parties, distribution='uniform', dim=1, params=None):
+def sample_parties(num_parties, distribution='uniform', dim=1, params=None, representation=False):
     if distribution == 'uniform':
         pass
 
@@ -18,8 +18,14 @@ def sample_parties(num_parties, distribution='uniform', dim=1, params=None):
             raise ValueError("Sum of weights must be equal to 1.")
             pass
 
-        # Randomly choose a mode based on weights
-        modes = np.random.choice(len(params['modes']), size=(num_parties,), p=[mode['weight'] for mode in params['modes']])
+        # Randomly choose a mode based on weights (but ensure every cluster is represented at least once if representation==True)
+        if representation:
+            modes = np.array([i  for i in range(len(params['modes']))])
+            modes = np.append(modes, np.random.choice(len(params['modes']), size=(num_parties-len(params['modes']),), p=[mode['weight'] for mode in params['modes']]))
+
+        else:
+            modes = np.random.choice(len(params['modes']), size=(num_parties,), p=[mode['weight'] for mode in params['modes']])
+            
 
         # Sample from the selected modes (parties)
         samples = np.zeros((num_parties, dim))
@@ -30,13 +36,13 @@ def sample_parties(num_parties, distribution='uniform', dim=1, params=None):
         
         party_positions = samples
 
-        parties = [Party(name=chr(i + 97), position = pos) for i, pos in enumerate(sorted(party_positions, key=lambda lr: lr[0]))]
+        parties = [Party(name=chr(i + 97), idx=i, position = pos) for i, pos in enumerate(sorted(party_positions, key=lambda lr: lr[0]))]
 
     return parties
         
 
 
-def sample_voters(demographic, parties, distribution='uniform', dim=1, params=None):
+def sample_voters(demographic, parties, distribution='uniform', dim=1, params=None, shuffle=False):
     num_voters = sum([len(val) for val in demographic.values()])
     if distribution == 'uniform':
         if params is None:
@@ -80,6 +86,12 @@ def sample_voters(demographic, parties, distribution='uniform', dim=1, params=No
     for i, voter in enumerate(voter_positions):
         preferences.append(sorted(parties, key = lambda party: np.linalg.norm(voter_positions[i] - party.position)))
     
+    if shuffle:
+        for preference in preferences:
+            for i in range(len(preference) - 1):
+                if np.random.rand(1) < 1e-1:
+                    preference[i], preference[i+1] = preference[i+1], preference[i]
+
     
     id = 0
     for voter_type, val in demographic.items():

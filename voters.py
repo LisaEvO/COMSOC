@@ -116,6 +116,7 @@ class NonConformist(Voter):
         preference.insert(0, preference.pop(preference.index(back_from_topk)))
 
         self.ballot = preference
+                       
 
 class Strategist(Voter):
 

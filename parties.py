@@ -3,8 +3,9 @@ from voters import *
 
 class Party(object):
     
-    def __init__(self, name:str, position:np.ndarray):
+    def __init__(self, name:str, idx:int, position:np.ndarray):
         self.name = name
+        self.idx = idx
         self.position = position
         self.poldeg = 0
     
