@@ -43,45 +43,9 @@ def plot_spectrum(voters, parties, vcmap=None, pcmap=None, fig_name=None, node_s
         plt.savefig(fig_name) 
     plt.show()
 
-def plot_seats_multiple_runs(outcomes, pcmap=None, legend=True, fig_name=None):
-    parties = sorted(list(outcomes[0][0].keys()), key=lambda party: party.name)
-    data = []
-    for outcome in outcomes:
-        seat_plot = {}
-        for poll in outcome:
-            for party in poll:
-                if party.name not in seat_plot:
-                    seat_plot[party.name]=[poll[party]]
-                else:
-                    seat_plot[party.name].append(poll[party])
-        data.append(seat_plot)
-    poll_nrs = range(len(outcome))
-    means = {}
-    stds = {}
 
-    if pcmap is None:
-        cmap = plt.get_cmap('rainbow_r')
-        norm = plt.Normalize(0, len(parties) - 1)
-        colors = cmap(norm(np.arange(len(parties))))
-        pcmap = {party.name: colors[i] for i, party in enumerate(parties)}
-    pcolors = [pcmap[party.name] for party in parties]
 
-    for i, party in enumerate(parties):
-        means[party.name] = np.mean([d[party.name] for d in data], axis=0)
-        stds[party.name] = np.std([d[party.name] for d in data], axis=0)
-        plt.plot(poll_nrs, means[party.name], label=party.name, color=pcolors[i])
-        plt.fill_between(poll_nrs, means[party.name]-stds[party.name], 
-                         means[party.name]+stds[party.name], alpha=0.2, color = pcolors[i])
-    plt.xlabel("Poll")
-    plt.ylabel("Seats")
-    plt.xticks(poll_nrs)
-    if legend == True:
-        plt.legend(bbox_to_anchor=(1, 1.05))
-    if fig_name!=None:
-        plt.savefig(fig_name) 
-    plt.show()
-
-def plot_seats_over_time(outcomes, pcmap=None):
+def plot_seats_over_time(outcomes, pcmap=None, fig_name=None):
     parties = sorted(list(outcomes[0][0].keys()), key=lambda party: party.idx)
     data = []
     for outcome in outcomes:
@@ -114,9 +78,12 @@ def plot_seats_over_time(outcomes, pcmap=None):
     plt.ylabel("Seats")
     plt.xticks(poll_nrs)
     plt.legend(bbox_to_anchor=(1, 1.05))
+    if fig_name !=None:
+        plt.savefig(fig_name)
+
     plt.show()
 
-def plot_flow_graph(elections, pcmap=None):
+def plot_flow_graph(elections, pcmap=None, fig_name=None):
     lst_flow_dict, lst_number_fans = [],[]
     for election in elections:
         flow_dict = defaultdict(int)
@@ -153,5 +120,6 @@ def plot_flow_graph(elections, pcmap=None):
     pos = nx.spring_layout(G)
     nx.draw(G, pos, with_labels=True, connectionstyle='arc3, rad = 0.1', 
             node_size=list(number_fans.values()), width=width, node_color=pcolors )
-
+    if fig_name != None:
+        plt.savefig(fig_name)
     plt.show()
