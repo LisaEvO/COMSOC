@@ -5,7 +5,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
-def plot_spectrum(voters, parties, vcmap=None, pcmap=None, fig_name=None, node_size=30):
+def plot_spectrum(voters, parties, vcmap=None, pcmap=None, node_size=100, annotate=False, fig_name=None):
     
     voters_x, voters_y = [voter.position[0] for voter in voters], [voter.position[1] for voter in voters]
     parties_x, parties_y = [party.position[0] for party in parties], [party.position[1] for party in parties]
@@ -26,26 +26,30 @@ def plot_spectrum(voters, parties, vcmap=None, pcmap=None, fig_name=None, node_s
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     
-    ax.spines['bottom'].set_position(('axes',0.5))
-    ax.spines['left'].set_position(('axes', 0.5))
+    ax.spines['bottom'].set_position(('data', 0))
+    ax.spines['left'].set_position(('data', 0))
     ax.spines['top'].set_color('none')
     ax.spines['right'].set_color('none')
 
     ax.set_xticklabels('')
     ax.set_yticklabels('')
     plt.scatter(voters_x, voters_y, s=0.2, color=vcolors)
-    plt.scatter(parties_x, parties_y, s=node_size, c=pcolors, marker='o', label=party_labels)
+    for party in parties:
+        plt.scatter(parties_x[party.idx], parties_y[party.idx], s=node_size, color=pcolors[party.idx], marker='o', label=party.name)
 
-    for label, x, y in zip(party_labels, parties_x, parties_y):
-        ax.annotate(label, (x, y), textcoords="offset points", xytext=(0,5), ha='center', color=pcmap[label], fontweight='bold')
+    if annotate:
+        for label, x, y in zip(party_labels, parties_x, parties_y):
+            ax.annotate(label, (x, y), textcoords="offset points", xytext=(0,5), ha='center', color=pcmap[label], fontweight='bold')
+    
+    else:
+        plt.legend()
 
     if fig_name!=None:
         plt.savefig(fig_name) 
+    
     plt.show()
 
-
-
-def plot_seats_over_time(outcomes, pcmap=None, fig_name=None):
+def plot_seats_over_time(outcomes, pcmap=None, legend=False, fig_name=None):
     parties = sorted(list(outcomes[0][0].keys()), key=lambda party: party.idx)
     data = []
     for outcome in outcomes:
@@ -66,6 +70,7 @@ def plot_seats_over_time(outcomes, pcmap=None, fig_name=None):
         norm = plt.Normalize(0, len(parties) - 1)
         colors = cmap(norm(np.arange(len(parties))))
         pcmap = {party.name: colors[i] for i, party in enumerate(parties)}
+    
     pcolors = [pcmap[party.name] for party in parties]
 
     for i, party in enumerate(parties):
@@ -77,7 +82,10 @@ def plot_seats_over_time(outcomes, pcmap=None, fig_name=None):
     plt.xlabel("Poll")
     plt.ylabel("Seats")
     plt.xticks(poll_nrs)
-    plt.legend(bbox_to_anchor=(1, 1.05))
+    
+    if legend:
+        plt.legend()#bbox_to_anchor=(1, 1.05)
+    
     if fig_name !=None:
         plt.savefig(fig_name)
 

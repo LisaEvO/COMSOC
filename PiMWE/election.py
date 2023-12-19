@@ -45,9 +45,13 @@ class Election(object):
     def update_ballots(self, poll_result):
         for voter in self.voters:
             voter.update_ballot(poll_result)
-
+    
+    def compute_poldegs(self):
+        for party in self.parties:
+            party.compute_poldeg(self.voters)
 
     def run(self):
+        self.compute_poldegs()
         
         poll_results = []
 
