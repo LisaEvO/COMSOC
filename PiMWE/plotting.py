@@ -5,7 +5,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
-def plot_spectrum(voters, parties, vcmap=None, pcmap=None):
+def plot_spectrum(voters, parties, vcmap=None, pcmap=None, fig_name=None, node_size=30):
     
     voters_x, voters_y = [voter.position[0] for voter in voters], [voter.position[1] for voter in voters]
     parties_x, parties_y = [party.position[0] for party in parties], [party.position[1] for party in parties]
@@ -26,20 +26,59 @@ def plot_spectrum(voters, parties, vcmap=None, pcmap=None):
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     
-    ax.spines['bottom'].set_position(('data', 0))
-    ax.spines['left'].set_position(('data', 0))
+    ax.spines['bottom'].set_position(('axes',0.5))
+    ax.spines['left'].set_position(('axes', 0.5))
     ax.spines['top'].set_color('none')
     ax.spines['right'].set_color('none')
 
     ax.set_xticklabels('')
     ax.set_yticklabels('')
     plt.scatter(voters_x, voters_y, s=0.2, color=vcolors)
-    plt.scatter(parties_x, parties_y, s=50, c=pcolors, marker='o', label=party_labels)
+    plt.scatter(parties_x, parties_y, s=node_size, c=pcolors, marker='o', label=party_labels)
 
     for label, x, y in zip(party_labels, parties_x, parties_y):
-        ax.annotate(label, (x, y), textcoords="offset points", xytext=(0,5), 
-                    ha='center', color=pcmap[label], fontsize=12, fontweight='bold')
+        ax.annotate(label, (x, y), textcoords="offset points", xytext=(0,5), ha='center', color=pcmap[label], fontweight='bold')
 
+    if fig_name!=None:
+        plt.savefig(fig_name) 
+    plt.show()
+
+def plot_seats_multiple_runs(outcomes, pcmap=None, legend=True, fig_name=None):
+    parties = sorted(list(outcomes[0][0].keys()), key=lambda party: party.name)
+    data = []
+    for outcome in outcomes:
+        seat_plot = {}
+        for poll in outcome:
+            for party in poll:
+                if party.name not in seat_plot:
+                    seat_plot[party.name]=[poll[party]]
+                else:
+                    seat_plot[party.name].append(poll[party])
+        data.append(seat_plot)
+    poll_nrs = range(len(outcome))
+    means = {}
+    stds = {}
+
+    if pcmap is None:
+        cmap = plt.get_cmap('rainbow_r')
+        norm = plt.Normalize(0, len(parties) - 1)
+        colors = cmap(norm(np.arange(len(parties))))
+        pcmap = {party.name: colors[i] for i, party in enumerate(parties)}
+    pcolors = [pcmap[party.name] for party in parties]
+
+    for i, party in enumerate(parties):
+        means[party.name] = np.mean([d[party.name] for d in data], axis=0)
+        stds[party.name] = np.std([d[party.name] for d in data], axis=0)
+        plt.plot(poll_nrs, means[party.name], label=party.name, color=pcolors[i])
+        plt.fill_between(poll_nrs, means[party.name]-stds[party.name], 
+                         means[party.name]+stds[party.name], alpha=0.2, color = pcolors[i])
+    plt.xlabel("Poll")
+    plt.ylabel("Seats")
+    plt.xticks(poll_nrs)
+    if legend == True:
+        plt.legend(bbox_to_anchor=(1, 1.05))
+    if fig_name!=None:
+        plt.savefig(fig_name) 
     plt.show()
 
 def plot_seats_over_time(outcomes, pcmap=None):
